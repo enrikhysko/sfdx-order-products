@@ -16,7 +16,7 @@ const columns = [
 export default class AvailableProducts extends LightningElement {
     @api recordId;
     priceBookId;
-    rowLimit = 201;
+    rowLimit = 200;
     rowOffset = 0;
     rowOffsetStart = 0;
     @track loadMoreStatus = '';
