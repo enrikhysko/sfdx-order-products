@@ -1,0 +1,23 @@
+<!-- sldsValidatorIgnore -->
+<template>
+    <lightning-card title="Available Products" icon-name="standard:product">
+        <div class="slds-var-m-around_medium" style="height: 500px;">
+            <lightning-datatable
+                    key-field="product2Id"
+                    data={availableProducts}
+                    columns={columns}
+                    enable-infinite-loading="true"
+                    onloadmore={loadMoreData}
+                    load-more-offset={rowLimit}
+                    max-row-selection={rowLimit}
+                    show-row-number-column
+                    column-widths-mode="auto"
+                    onrowaction={handleRowAction}>
+            </lightning-datatable>
+        </div>
+        {loadMoreStatus}
+        <template if:true={error}>
+            <c-error-panel errors={error}></c-error-panel>
+        </template>
+    </lightning-card>
+</template>
