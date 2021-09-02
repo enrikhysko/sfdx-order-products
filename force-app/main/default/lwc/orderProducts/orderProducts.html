@@ -1,5 +1,8 @@
 <template>
     <lightning-card title="Order Products" icon-name="standard:orders">
+        <template if:true={showLoadingSpinner}>
+            <lightning-spinner alternative-text="Loading" size="medium" variant="brand"></lightning-spinner>
+        </template>
         <template if:true={orderProducts}>
             <!-- sldsValidatorIgnoreNextLine -->
             <lightning-datatable
@@ -7,6 +10,7 @@
                 data={orderProducts}
                 columns={columns}
                 column-widths-mode="auto"
+                show-row-number-column
                 hide-checkbox-column>
             </lightning-datatable>
         </template>

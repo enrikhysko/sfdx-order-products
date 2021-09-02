@@ -5,7 +5,12 @@ import { reduceErrors } from "c/ldsUtils";
 import getOrderProducts from "@salesforce/apex/OrderProductsCTRL.getOrderProducts";
 import upsertOrderProducts from "@salesforce/apex/OrderProductsCTRL.upsertOrderProducts";
 
-/** note: string label values are used directly, not via Custom Labels */
+/** notes:
+ *  string label values are used directly, not via Custom Labels
+ *  delete of single row on orderProducts list is not included as out of criteria
+ *  showing total amount at the end of orderProducts table is not included as out of criteria
+ *    (event that the Order Amount field is present on highlights panel section)
+ */
 
 /** order products table columns */
 const columns = [
@@ -28,6 +33,9 @@ export default class OrderProducts extends LightningElement {
 
   /** datatable columns */
   columns = columns;
+
+  // to show/hide loading spinner
+  showLoadingSpinner = false;
 
   error;
 
@@ -58,13 +66,15 @@ export default class OrderProducts extends LightningElement {
   }
 
   connectedCallback() {
-    window.addEventListener("orderProducts", this.handleMessage, false);
+    window.addEventListener("orderproducts", this.handleMessage, false);
   }
 
   /** handle the message from orderProducts event */
   handleMessage = (event) => {
     let addedProducts = event.detail.value;
     let orderProdToUpsert = [];
+    // to show laoding spinner
+    this.showLoadingSpinner = true;
     addedProducts.forEach((pbe) => {
       // eslint-disable-next-line no-useless-escape
       pbe.UnitPrice = pbe.UnitPrice.substring(1).replace(/\,/g, ""); // remove currency symbol at the beginning and to have as number format
@@ -97,25 +107,23 @@ export default class OrderProducts extends LightningElement {
         });
       }
     });
-    // to show laoding spinner
-    let tableElement = this.template.querySelector("lightning-datatable");
-    tableElement.isLoading = true;
-
     upsertOrderProducts({
       orderProducts: orderProdToUpsert,
       orderId: this.recordId
     })
       .then(() => {
-        tableElement.isLoading = false;
+        this.showLoadingSpinner = false; // to hide loading spinner
+        // window.setTimeout(this.showToast('Success', 'Sucess', 'success'), 0); // doesn't work within this context
         return refreshApex(this.wiredOrderProducts);
       })
       .catch((error) => {
+        // window.setTimeout(this.showToast('Error', error, 'error'), 0); // // doesn't work within this context
         this.error = error;
       });
   };
 
   disconnectedCallback() {
-    window.removeEventListener("orderProducts", this.handleMessage, false);
+    window.removeEventListener("orderproducts", this.handleMessage, false);
   }
 
   showToast(title, error, variant) {

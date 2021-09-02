@@ -1,21 +1,35 @@
-<!-- sldsValidatorIgnore -->
 <template>
     <lightning-card title="Available Products" icon-name="standard:product">
-        <div class="slds-var-m-around_medium" style="height: 500px;">
-            <lightning-datatable
-                    key-field="product2Id"
-                    data={availableProducts}
-                    columns={columns}
-                    enable-infinite-loading="true"
-                    onloadmore={loadMoreData}
-                    load-more-offset={rowLimit}
-                    max-row-selection={rowLimit}
-                    show-row-number-column
-                    column-widths-mode="auto"
-                    onrowaction={handleRowAction}>
-            </lightning-datatable>
-        </div>
-        {loadMoreStatus}
+        <lightning-button label="Add Products" slot="actions" onclick={handleClick} disabled={isActiveStatus}></lightning-button>
+        <template if:true={showTable}>
+            <lightning-input type="search" placeholder="Search Products..." onchange={searchTermChange} class="slds-var-m-bottom_medium"></lightning-input>
+            <div style="height: 500px;">
+                <!-- sldsValidatorIgnoreNextLine -->
+                <lightning-datatable
+                        key-field="Id"
+                        data={availableProducts}
+                        columns={columns}
+                        enable-infinite-loading="true"
+                        onloadmore={loadMoreData}
+                        load-more-offset={rowLimit}
+                        max-row-selection={rowLimit}
+                        column-widths-mode="auto">
+                </lightning-datatable>
+            </div>
+            {loadMoreStatus}
+        </template>
+        <template if:true={isActiveStatus}>
+            <div class="slds-media__body" >
+                <div class="slds-clearfix">
+                    <div class="slds-align_absolute-center">
+                        <lightning-icon icon-name="utility:info" size="small" alternative-text="Info" title="Info"></lightning-icon>
+                        <div class="slds-var-m-left_small">
+                            <p>Cannot add products on an Active Order.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </template>
         <template if:true={error}>
             <c-error-panel errors={error}></c-error-panel>
         </template>

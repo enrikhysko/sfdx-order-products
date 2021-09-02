@@ -1,43 +1,60 @@
 import { LightningElement, wire, api, track } from 'lwc';
-import { getRecord } from 'lightning/uiRecordApi';
+import { getRecord, getFieldValue } from 'lightning/uiRecordApi';
 import ShowToastEvent from 'lightning/platformShowToastEvent';
 import { reduceErrors } from 'c/ldsUtils';
+
+/** Apex CTRL methods */
 import getAvailableProducts from '@salesforce/apex/AvailableProductsCTRL.getAvailableProducts';
 import countAvailableProducts from '@salesforce/apex/AvailableProductsCTRL.countAvailableProducts';
-// Order fields
-import PRICEBOOK2ID from '@salesforce/schema/Order.Pricebook2Id';
 
+/** Order Schema. */
+import PRICEBOOK2ID_FIELD from '@salesforce/schema/Order.Pricebook2Id';
+import STATUS_FIELD from '@salesforce/schema/Order.Status';
+
+/** available products table columns */
 const columns = [
     { label: 'Name', fieldName: 'Name' },
     { label: 'List Price', fieldName: 'UnitPrice' },
-    // { type: 'button', typeAttributes: { label: 'Add to Order', variant: 'brand-outline' }, cellAttributes: { alignment: 'center' } },
 ];
 
+/** note: string label values are used directly, not via Custom Labels */
+
 export default class AvailableProducts extends LightningElement {
+    /** Id of Order SObject. */
     @api recordId;
+
+    /** Id of PriceBook related SObject. */
     priceBookId;
+
+    /** Status of Order SObject. */
+    orderStatus;
+
+    /** used for infinite scrolling of record on datatable. */
     rowLimit = 200;
     rowOffset = 0;
     rowOffsetStart = 0;
     @track loadMoreStatus = '';
+
     @track availableProducts = [];
+    _allAvailableProducts = [];
     columns = columns;
     tableElement;
     totalRecords;
     error;
 
-    @wire(getRecord, { recordId: '$recordId', fields: PRICEBOOK2ID })
+    @wire(getRecord, { recordId: '$recordId', fields: [PRICEBOOK2ID_FIELD, STATUS_FIELD] })
     wiredOrder({ error, data }) {
         if (error) {
-            // this.showToast('Error loading order', error, 'error');
             this.priceBookId = undefined;
             this.error = error;
         } else if (data) {
-            // console.log(1);
-            // this.priceBookId = getFieldValue(data, PRICEBOOK2ID);
-            this.priceBookId = data.fields.Pricebook2Id.value;
-            console.log('priceBookId', this.priceBookId)
+            this.priceBookId = getFieldValue(data, PRICEBOOK2ID_FIELD);
+            this.orderStatus = getFieldValue(data, STATUS_FIELD);
         }
+    }
+
+    get isActiveStatus() {
+        return this.orderStatus === 'Activated';
     }
 
     @wire(countAvailableProducts, { priceBookId: '$priceBookId' })
@@ -47,7 +64,6 @@ export default class AvailableProducts extends LightningElement {
             this.error = error;
         } else if (data) {
             this.totalRecords = data;
-            console.log('totalRecords', JSON.stringify(this.totalRecords))
             this.error = undefined;
         }
     }
@@ -55,14 +71,18 @@ export default class AvailableProducts extends LightningElement {
     @wire(getAvailableProducts,  { priceBookId: '$priceBookId', rowLimit: '$rowLimit', rowOffset: '$rowOffsetStart' })
     onProducts({ error, data }) {
         if (error) {
-            // this.showToast('Error loading products', error, 'error');
             this.availableProducts = undefined;
+            this._allAvailableProducts = undefined;
             this.error = error;
         } else if (data) {
             this.availableProducts = data;
-            console.log('availableProducts', JSON.stringify(this.availableProducts))
+            this._allAvailableProducts = [...this.availableProducts];
             this.error = undefined;
         }
+    }
+
+    get showTable() {
+        return this.availableProducts.length > 0 && !this.isActiveStatus
     }
 
     loadMoreData(event) {
@@ -76,7 +96,8 @@ export default class AvailableProducts extends LightningElement {
         getAvailableProducts({ priceBookId: this.priceBookId, rowLimit: this.rowLimit, rowOffset: this.rowOffset })
             .then((result) => {
                 this.availableProducts = this.availableProducts.concat(result);
-                if (this.availableProducts.length >= this.totalRecords) {
+                this._allAvailableProducts = this._allAvailableProducts.concat(result);
+                if (this._allAvailableProducts.length >= this.totalRecords) {
                     this.tableElement.enableInfiniteLoading = false;
                     this.loadMoreStatus = '';
                 }
@@ -89,12 +110,26 @@ export default class AvailableProducts extends LightningElement {
             .catch((error) => {
                 this.availableProducts = [];
                 this.error = error;
-                console.error('loadMoreData.error', JSON.stringify(error))
             })
     }
 
-    handleRowAction(event) {
-        let row = event.detail.row;
+    searchTermChange(event) {
+        let searchTermProduct = event.target.value;
+        this.availableProducts = this._allAvailableProducts
+                                    .filter(
+                                        item => !searchTermProduct ||
+                                        item.Name.toLowerCase().match(searchTermProduct.toLowerCase()));
+    }
+
+    handleClick() {
+        this.selectedRows = this.template.querySelector("lightning-datatable").getSelectedRows();
+        let event = new CustomEvent('orderproducts', {
+            detail: {
+                value: this.selectedRows
+            },
+            bubbles: true
+        });
+        this.dispatchEvent(event);
     }
 
     showToast(title, error, variant) {
