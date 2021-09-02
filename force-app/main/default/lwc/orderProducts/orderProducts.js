@@ -14,7 +14,7 @@ import upsertOrderProducts from "@salesforce/apex/OrderProductsCTRL.upsertOrderP
 
 /** order products table columns */
 const columns = [
-  { label: 'Name', fieldName: 'ProductName' },
+	{ label: 'Name', fieldName: 'linkName' , type: 'url', typeAttributes: { label: { fieldName: 'ProductName' } } },
   { label: 'Unit Price', fieldName: 'UnitPrice' },
   { label: 'Quantity', fieldName: 'Quantity' },
   { label: 'TotalPrice', fieldName: 'TotalPrice' },
@@ -54,6 +54,9 @@ export default class OrderProducts extends LightningElement {
         if (orderProd.Product2) {
           op.ProductName = orderProd.Product2.Name;
         }
+        // the link format works for sfdc internal orgs
+        // for the scope of this asignment, it doesn't handle the case if it's somewhere else, for eg in a community site (which would be like '../')
+        op.linkName = '/' + orderProd.Id;
         op.Id = orderProd.Id;
         op.Product2Id = orderProd.Product2Id;
         op.UnitPrice = orderProd.UnitPrice;
