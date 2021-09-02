@@ -9,7 +9,7 @@ import upsertOrderProducts from "@salesforce/apex/OrderProductsCTRL.upsertOrderP
  *  string label values are used directly, not via Custom Labels
  *  delete of single row on orderProducts list is not included as out of criteria
  *  showing total amount at the end of orderProducts table is not included as out of criteria
- *    (event that the Order Amount field is present on highlights panel section)
+ *    (even that the Order Amount field is present on highlights panel section)
  */
 
 /** order products table columns */
