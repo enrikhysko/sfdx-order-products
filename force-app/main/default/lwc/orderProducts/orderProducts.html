@@ -1,0 +1,29 @@
+<template>
+    <lightning-card title="Order Products" icon-name="standard:orders">
+        <template if:true={orderProducts}>
+            <!-- sldsValidatorIgnoreNextLine -->
+            <lightning-datatable
+                key-field="Id"
+                data={orderProducts}
+                columns={columns}
+                column-widths-mode="auto"
+                hide-checkbox-column>
+            </lightning-datatable>
+        </template>
+        <template if:false={orderProducts}>
+            <div class="slds-media__body" >
+                <div class="slds-clearfix">
+                    <div class="slds-align_absolute-center">
+                        <lightning-icon icon-name="utility:info" size="small" alternative-text="Info" title="Info"></lightning-icon>
+                        <div class="slds-var-m-left_small">
+                            <p>No Order Products available. If you add them they will be shown here</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </template>
+    </lightning-card>
+    <template if:true={error}>
+        <c-error-panel errors={error}></c-error-panel>
+    </template>
+</template>
